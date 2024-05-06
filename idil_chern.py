@@ -5,7 +5,33 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import decimal
 
-def H_k(k_vec, dim, p):
+def H_k(k,q,p):
+    kx=k[0]
+    ky=k[1]
+    # Initialize the matrix
+    M = np.zeros((q, q), dtype=complex)
+
+    # Fill in the matrix
+    for i in range(q):
+        # Main diagonal
+        M[i, i] =  2 * np.cos(ky + (2*np.pi)**(1)*(1-p/q) *  (i+1))
+    # Upper diagonal
+        if i + 1 < q:
+            M[i, i + 1] = np.exp(kx*1j)
+    # Lower diagonal
+        if i - 1 >= 0:
+            M[i, i - 1] = np.exp(-kx*1j)
+
+    M[0,q-1]= np.exp(-1j*kx)
+    M[q-1,0]= np.exp(1j*kx)  
+
+    if q==2:
+        M[0,1]=np.exp(+kx*1j)+np.exp(-kx*1j) 
+        M[1,0]=np.exp(+kx*1j)+np.exp(-kx*1j)  
+          
+    return M
+
+def H(k_vec, dim, p):
     """
     Function to construct the Hamiltonian of a 2DEG in the presence of an applied magnetic field.
     The magnetic field is introduced using Landau's gauge.
@@ -25,13 +51,13 @@ def H_k(k_vec, dim, p):
     Hk = np.zeros((dim, dim), dtype=complex)
     t = 1  # hopping amplitude
     q = dim  # setting q equal to dimension for consistency
-    phi = 2*np.pi*p / q   # Correcting the flux to match the periodicity
+    phi = p / q   # Correcting the flux to match the periodicity
 
     kx, ky = k_vec
 
     # Diagonal elements
     for i in range(dim):
-        Hk[i, i] = -2 * t * np.cos(ky - 2 * (i) * np.pi * phi)
+        Hk[i, i] = -2 * t * np.cos(ky -  (i) * (2 * np.pi)**(1) * phi)
 
     # Off-diagonal elements
     for i in range(dim - 1):
@@ -97,9 +123,9 @@ def latF(k_vec, Dk, dim, p):
 
     return F12, E[idx]
 
-x_res = 30
-y_res = 30
-q = 29
+x_res = 27
+y_res = 27
+q = 3
 p = 1
 Nd = q
 
@@ -126,7 +152,7 @@ chernN = sumN.imag / (2 * np.pi)
 print("Chern number associated with each band: ", chernN)
 print("Rounded chern number associated with each band: ", np.round(chernN).astype(int))
 print("Sum of rounded chern numbers: ", sum(np.round(chernN).astype(int)))
-"""
+
 fig = pl.figure()
 ax = fig.add_subplot(111, projection='3d')
 
@@ -148,8 +174,8 @@ ax.set_yticklabels([r'$0$', r'$\pi$', r'$2\pi$'], fontsize=16)
 ax.set_ylim(0, 2 * np.pi)
 
 ax.set_zlabel(r'$i\tilde{F}_{12}$', fontsize=18)
+ax.set_zlim(np.min(LF_arr[1, :, :]),np.max(LF_arr[1, :, :]))
 
 ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([0.5, 1.5, 1, 1]))
 
 pl.show()
-"""
