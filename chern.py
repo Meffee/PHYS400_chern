@@ -5,7 +5,41 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import decimal
 
-def H_k(k,q,p):
+def H(k,q,p):
+    kx=k[0]
+    ky=k[1]
+    # Define magnetic flux per unit-cell
+    alpha = p/q
+    
+    # qxq size of zero matrix to initialize 
+    M = np.zeros((q,q), dtype=complex)
+    
+    # Matrix elements
+    for i in range(0,q):
+        
+        # Ortogonal elements of matris
+        M[i,i] = 2*np.cos(ky-2*np.pi*alpha*i)
+        
+        # Other elements
+        if i==q-1: 
+            M[i,i-1]=1
+        elif i==0: 
+            M[i,i+1]=1
+        else: 
+            M[i,i-1]=1
+            M[i,i+1]=1
+            
+    # Bloch conditions
+    if q==2:
+        M[0,q-1] = 1+np.exp(-q*1.j*kx)
+        M[q-1,0] = 1+np.exp(q*1.j*kx)
+    else:
+        M[0,q-1] = np.exp(-q*1.j*kx)
+        M[q-1,0] = np.exp(q*1.j*kx)
+        
+    return M
+
+def Hk(k,q,p):
     kx=k[0]
     ky=k[1]
     # Initialize the matrix
@@ -22,8 +56,8 @@ def H_k(k,q,p):
         if i - 1 >= 0:
             M[i, i - 1] = np.exp(-kx*1j)
 
-    M[0,q-1]= np.exp(-1j*kx)
-    M[q-1,0]= np.exp(1j*kx)  
+    M[0,q-1]= np.exp(-kx*1j)
+    M[q-1,0]= np.exp(kx*1j)
 
     if q==2:
         M[0,1]=np.exp(+kx*1j)+np.exp(-kx*1j) 
@@ -31,7 +65,7 @@ def H_k(k,q,p):
           
     return M
 
-def H(k_vec, dim, p):
+def H_k(k_vec, dim, p):
     """
     Function to construct the Hamiltonian of a 2DEG in the presence of an applied magnetic field.
     The magnetic field is introduced using Landau's gauge.
@@ -123,8 +157,8 @@ def latF(k_vec, Dk, dim, p):
 
     return F12, E[idx]
 
-x_res = 27
-y_res = 27
+x_res = 50
+y_res = 50
 q = 3
 p = 1
 Nd = q
@@ -156,7 +190,7 @@ print("Sum of rounded chern numbers: ", sum(np.round(chernN).astype(int)))
 fig = pl.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-kx = np.linspace(0, 2 * np.pi / q, x_res)
+kx = np.linspace(0, 2 * np.pi /q, x_res)
 ky = np.linspace(0, 2 * np.pi, y_res)
 
 kx, ky = np.meshgrid(ky, kx)
