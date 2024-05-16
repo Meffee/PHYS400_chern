@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 # Define function of Harper matrix 
-def Hj(p, q, kx, ky):
+def Hk(p, q, kx, ky):
     
     # Define magnetic flux per unit-cell
     alpha = p/q
@@ -36,38 +36,26 @@ def Hj(p, q, kx, ky):
         
     return M
 
-def Hk(p,q,kx,ky):
-    """function to construct the Hamiltonian of a 2DEG in
-    presence of an applied magnetic field. The magnetic
-    field is introduced using Landau's guage.  
-    input:
-    ------
-    k_vec: vec(2), float, (kx, ky)
-    dim: integer, dimension of Hamiltonian, depends on magnetic flux
+def Hj(p,q,kx,ky):
+    dim=q
+    Hk = np.zeros((dim, dim), dtype=complex)
+    t = -1  # hopping amplitude
+    phi = p / q   # Correcting the flux to match the periodicity
 
-    return:
-    -------
-    Hk: (2,2) complex, k-representation of H
+    # Diagonal elements
+    for i in range(dim):
+        Hk[i, i] = -2 * t * np.cos(ky -  (i) * (2 * np.pi)**(1) * phi)
 
-    """
-    Hk = np.zeros((q,q), dtype=complex)
-    t = -1                       # hopping amplitude
-    
-    phi = p/q                  # flux per plaquette
+    # Off-diagonal elements
+    for i in range(dim - 1):
+        Hk[i, i + 1] = -t
+        Hk[i + 1, i] = -t  # Ensuring Hermiticity
 
-   
-    # diagonal elements
-    for i in range(q):
-        Hk[i,i] = -2*t*np.cos( ky - 2.*(i+1)*np.pi*phi )
-        if i + 1 < q:
-            Hk[i, i + 1] = -t
-         
+    # Additional phase for periodic boundary conditions or long-range coupling
+    Hk[0, dim - 1] = -t * np.exp(-1j * q * kx)
+    Hk[dim - 1, 0] = -t * np.exp(1j * q * kx)  # Ensuring Hermiticity
 
-
-    Hk[0,q-1] = -t*np.exp(-q*1.j*kx)
-
-    # Make it hermitian
-    Hk = Hk + Hk.conj().T
+    return Hk
 
     return Hk
 
@@ -98,22 +86,22 @@ def H(p, q, kx ,ky):
     #M=M+M.conj().T      
     return M
 
-Q=4
+Q=3
 p=1
+q=Q
 
 
-
-for q in range(1,Q+1):
-    xline=np.linspace(-4*np.pi/3,4*np.pi/3)
-    yline=np.linspace(-4*np.pi/3,4*np.pi/3)
+def band_draw(H):
+    xline=np.linspace(-2*np.pi/Q,2*np.pi/Q)
+    yline=np.linspace(-2*np.pi/Q,2*np.pi/Q)
     X, Y = np.meshgrid(xline, yline)
-    Z = np.zeros(X.shape + (q,))
+    Z = np.zeros(X.shape + (Q,))
 
     # Populate Z with eigenvalues for each (kx, ky) pair
     for i in range(len(xline)):
         for j in range(len(yline)):
             eigenvals = np.linalg.eigvalsh(H(p, q, X[i, j], Y[i, j]))
-            for k in range(q):
+            for k in range(Q):
                 Z[i, j, k] = eigenvals[k]
 
     #x1 = np.linalg.eigvalsh(H(1,3,xline, yline))
@@ -143,3 +131,6 @@ for q in range(1,Q+1):
     plt.tight_layout()
     plt.show()
     
+band_draw(H)
+band_draw(Hk)
+band_draw(Hj)
